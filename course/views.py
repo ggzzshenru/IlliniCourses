@@ -5,6 +5,10 @@ def search(request):
     return render(request, 'search.html', {})
 
 def course(request, subject_number):
+    # query database
+    # handler
+    # context(handler)
+
     context = {
         "subject_number": subject_number
     }
