@@ -1,8 +1,13 @@
-from django.urls import path
+from django.urls import path, re_path
 from . import views
 
 urlpatterns = [
-    path("", views.search, name = "search"),
-    path("courses/<str:subject_number>", views.course, name = "course")
-    #path("/search?subject_number=<str:subject_number>", views.course, name = "course")
+    # default return search
+    path("", views.search, name = "search_page"),
+    # course page
+    path("courses/<str:subject_number>", views.course, name = "course_page"),
+    # ranking page
+    path("ranking", views.ranking, name = "ranking_page"),
+    # all other page go to 404
+    re_path(r".+", views.error, name = "error_page")
 ]
