@@ -20,6 +20,7 @@ class Course(models.Model):
             models.CheckConstraint(check = ~models.Q(title = ""), name = "course_title_not_null_constraint"),
             models.UniqueConstraint(fields = ["subject", "number"], name = "course_title_unique_constraint")
         ]
+        db_table = "Course"
 
 
 class GeneralEducation(models.Model):
@@ -28,6 +29,7 @@ class GeneralEducation(models.Model):
         constraints = [
             models.CheckConstraint(check = ~models.Q(type = ""), name = "general_education_not_null_constraint")
         ]
+        db_table = "GeneralEducation"
 
 class GenedSatisfaction(models.Model):
     subject_number_type = models.CharField(max_length = 64, primary_key = True)
@@ -40,6 +42,7 @@ class GenedSatisfaction(models.Model):
             models.CheckConstraint(check = ~models.Q(subject_number = ""), name = "gened_satisfication_subject_numbe_not_null_constraint"),
             models.CheckConstraint(check = ~models.Q(type = ""), name = "gened_satisfication_type_not_null_constraint")
         ]
+        db_table = "GenedSatisfaction"
 
 class Semester(models.Model):
     year_term = models.CharField(max_length = 64, primary_key = True)
@@ -51,6 +54,7 @@ class Semester(models.Model):
             models.CheckConstraint(check = ~models.Q(year = ""), name = "semester_year_not_null_constraint"),
             models.CheckConstraint(check = ~models.Q(term = ""), name = "semester_term_not_null_constraint")
         ]
+        db_table = "Semester"
 
 class Grade(models.Model):
     subject_number = models.ForeignKey(Course, on_delete = models.CASCADE)
@@ -79,3 +83,4 @@ class Grade(models.Model):
             models.CheckConstraint(check = ~models.Q(first_name = ""), name = "grade_first_name_not_null_constraint"),
             models.CheckConstraint(check = ~models.Q(last_name = ""), name = "grade_last_name_not_null_constraint")
         ]
+        db_table = "Grade"

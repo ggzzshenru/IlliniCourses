@@ -9,5 +9,5 @@ urlpatterns = [
     # ranking page
     path("ranking", views.ranking, name = "ranking_page"),
     # all other page go to 404
-    re_path(r".+", views.error, name = "error_page")
+    # re_path(r".+", views.error, name = "error_page")
 ]
