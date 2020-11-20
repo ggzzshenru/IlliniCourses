@@ -12,8 +12,8 @@ class Course(models.Model):
     average_rating = models.IntegerField()
     class Meta:
         constraints = [
-            models.CheckConstraint(check = models.Q(average_workload__gte = '0'), name = "course_averge_workload_gte_zero_constraint"),
-            models.CheckConstraint(check = models.Q(average_rating__gte = '0'), name = "course_averge_rating_gte_zero_constraint"),
+            models.CheckConstraint(check = models.Q(average_workload__gte = '-1'), name = "course_averge_workload_gte_zero_constraint"),
+            models.CheckConstraint(check = models.Q(average_rating__gte = '-1'), name = "course_averge_rating_gte_zero_constraint"),
             models.CheckConstraint(check = ~models.Q(subject_number = ""), name = "course_subject_number_not_null_constraint"),
             models.CheckConstraint(check = ~models.Q(subject = ""), name = "course_subject_not_null_constraint"),
             models.CheckConstraint(check = ~models.Q(number = ""), name = "course_number_not_null_constraint"),
