@@ -67,6 +67,8 @@ def ranking(request):
     if(True if is_data_only == "True" else False):
         return JsonResponse(dic)
     else:
+        dic["default_subject_list"] = default_subject_list
+        dic["default_gened_list"] = default_gened_list
         return render(request, "ranking.html", dic);
 
 
