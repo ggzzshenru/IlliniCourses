@@ -71,7 +71,6 @@ def course(request, subject_number):
     # returned data
     ret_dic = {"GPA_semester" : GPA_semester, "all_semester": all_semester, \
                 "GPA_instructor": GPA_instructor, "all_instructor": all_instructor}
-    print(ret_dic)
     return render(request, "course.html", ret_dic)
 
 def ranking(request):
@@ -97,7 +96,7 @@ def ranking(request):
 
     # do the query
     sql = "SELECT * \
-    FROM Course JOIN GenedSatisfaction \
+    FROM Course JOIN GenedSatisfaction ON Course.subject_number = GenedSatisfaction.subject_number_id\
     WHERE average_rating >= {avg_rating_lo} AND average_rating <= {avg_rating_hi} \
     AND average_workload >= {avg_workload_lo} AND average_workload <= {avg_workload_hi} \
     AND subject IN ({subject_list}) AND type_id IN ({gened_list}) \
@@ -113,8 +112,8 @@ def ranking(request):
     # handle the result
     cursor = connection.cursor()
     cursor.execute(sql)
-    dic = utility.dictfetchall(cursor)
-    dic = {i:dic[0] for i in range(len(dic))}
+    all_rows = utility.dictfetchall(cursor)
+    dic = {i:all_rows[i] for i in range(len(all_rows))}
 
     # send back the data
     if(True if is_data_only == "True" else False):
