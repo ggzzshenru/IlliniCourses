@@ -28,6 +28,7 @@ def course(request, subject_number):
                     "d_plus": 1.33, "d": 1.00, "d_minus": 0.67, \
                     "f": 0.00, "abs": 0.00, "w": 0.00}
     sql = "SELECT subject_number_id AS subject_number, year_term_id AS year_term, \
+            first_name, middle_name, last_name, \
             sum(a_plus) AS a_plus, sum(a) AS a, sum(a_minus) AS a_minus, \
             sum(b_plus) AS b_plus, sum(b) AS b, sum(b_minus) AS b_minus, \
             sum(c_plus) AS c_plus, sum(c) AS c, sum(c_minus) AS c_minus, \
@@ -35,28 +36,42 @@ def course(request, subject_number):
             sum(w) AS w, sum(f) AS f\
             FROM Grade \
             WHERE subject_number_id = \"{subject_number}\" \
-            GROUP BY year_term_id".format(subject_number = subject_number)
+            GROUP BY year_term_id, first_name, middle_name, last_name" \
+            .format(subject_number = subject_number)
 
     # handle queried data
     cursor = connection.cursor()
     cursor.execute(sql)
     data = utility.dictfetchall(cursor)
     GPA_semester = {}
+    GPA_instructor = {}
     all_semester = []
+    all_instructor = []
     for semester in data:
         current_semester = semester["year_term"]
-        all_semester.append(current_semester)
-        total_count = 0
-        total_GPA = 0.0
+        instructor_name = ' '.join([semester["first_name"], semester["middle_name"], semester["last_name"]]) \
+                            if semester["middle_name"] else ' '.join([semester["first_name"], semester["last_name"]])
+        if(instructor_name not in GPA_instructor):
+            GPA_instructor[instructor_name] = {"total_count": 0, "total_GPA": 0}
+            all_instructor.append(instructor_name)
+        if(current_semester not in GPA_semester):
+            GPA_semester[current_semester] = {"total_count": 0, "total_GPA": 0}
+            all_semester.append(current_semester)
+
         for k, v in GPA_Mapping.items():
             if(k in semester):
-                total_count += int(semester[k])
-                total_GPA += (int(semester[k]) * v)
-        GPA_semester[current_semester] = {"total_count": total_count, "total_GPA": total_GPA}
+                GPA_semester[current_semester]["total_count"] += int(semester[k])
+                GPA_semester[current_semester]["total_GPA"] += (int(semester[k]) * v)
+                GPA_instructor[instructor_name]["total_count"] += int(semester[k])
+                GPA_instructor[instructor_name]["total_GPA"] += (int(semester[k]) * v)
 
     all_semester = sorted(all_semester)
+    all_instructor = sorted(all_instructor)
+
     # returned data
-    ret_dic = {"GPA_semester" : GPA_semester, "all_semester": all_semester}
+    ret_dic = {"GPA_semester" : GPA_semester, "all_semester": all_semester, \
+                "GPA_instructor": GPA_instructor, "all_instructor": all_instructor}
+    print(ret_dic)
     return render(request, "course.html", ret_dic)
 
 def ranking(request):
