@@ -21,13 +21,14 @@ def course(request, subject_number):
     number = ''.join(number)
     subject_number = subject + "_" + number
 
-    # query database
-    GPA_Mapping = {"a_plus": 4.0, "a": 4.00, "a_minus": 3.67,   \
-                    "b_plus": 3.33, "b": 3, "b_minus": 2.67,    \
-                    "c_plus": 2.33, "c": 2.00, "c_minus": 1.67, \
-                    "d_plus": 1.33, "d": 1.00, "d_minus": 0.67, \
-                    "f": 0.00, "abs": 0.00, "w": 0.00}
-    sql = "SELECT subject_number_id AS subject_number, year_term_id AS year_term, \
+    if(request.method == 'GET'):
+        # query database
+        GPA_Mapping = {"a_plus": 4.0, "a": 4.00, "a_minus": 3.67,   \
+                        "b_plus": 3.33, "b": 3, "b_minus": 2.67,    \
+                        "c_plus": 2.33, "c": 2.00, "c_minus": 1.67, \
+                        "d_plus": 1.33, "d": 1.00, "d_minus": 0.67, \
+                        "f": 0.00, "abs": 0.00, "w": 0.00}
+        sql = "SELECT subject_number_id AS subject_number, year_term_id AS year_term, \
             first_name, middle_name, last_name, \
             sum(a_plus) AS a_plus, sum(a) AS a, sum(a_minus) AS a_minus, \
             sum(b_plus) AS b_plus, sum(b) AS b, sum(b_minus) AS b_minus, \
@@ -39,39 +40,87 @@ def course(request, subject_number):
             GROUP BY year_term_id, first_name, middle_name, last_name" \
             .format(subject_number = subject_number)
 
-    # handle queried data
-    cursor = connection.cursor()
-    cursor.execute(sql)
-    data = utility.dictfetchall(cursor)
-    GPA_semester = {}
-    GPA_instructor = {}
-    all_semester = []
-    all_instructor = []
-    for semester in data:
-        current_semester = semester["year_term"]
-        instructor_name = ' '.join([semester["first_name"], semester["middle_name"], semester["last_name"]]) \
+        # handle queried data
+        cursor = connection.cursor()
+        cursor.execute(sql)
+        data = utility.dictfetchall(cursor)
+        GPA_semester = {}
+        GPA_instructor = {}
+        all_semester = []
+        all_instructor = []
+        for semester in data:
+            current_semester = semester["year_term"]
+            instructor_name = ' '.join([semester["first_name"], semester["middle_name"], semester["last_name"]]) \
                             if semester["middle_name"] else ' '.join([semester["first_name"], semester["last_name"]])
-        if(instructor_name not in GPA_instructor):
-            GPA_instructor[instructor_name] = {"total_count": 0, "total_GPA": 0}
-            all_instructor.append(instructor_name)
-        if(current_semester not in GPA_semester):
-            GPA_semester[current_semester] = {"total_count": 0, "total_GPA": 0}
-            all_semester.append(current_semester)
+            if(instructor_name not in GPA_instructor):
+                GPA_instructor[instructor_name] = {"total_count": 0, "total_GPA": 0}
+                all_instructor.append(instructor_name)
+            if(current_semester not in GPA_semester):
+                GPA_semester[current_semester] = {"total_count": 0, "total_GPA": 0}
+                all_semester.append(current_semester)
 
-        for k, v in GPA_Mapping.items():
-            if(k in semester):
-                GPA_semester[current_semester]["total_count"] += int(semester[k])
-                GPA_semester[current_semester]["total_GPA"] += (int(semester[k]) * v)
-                GPA_instructor[instructor_name]["total_count"] += int(semester[k])
-                GPA_instructor[instructor_name]["total_GPA"] += (int(semester[k]) * v)
+            for k, v in GPA_Mapping.items():
+                if(k in semester):
+                    GPA_semester[current_semester]["total_count"] += int(semester[k])
+                    GPA_semester[current_semester]["total_GPA"] += (int(semester[k]) * v)
+                    GPA_instructor[instructor_name]["total_count"] += int(semester[k])
+                    GPA_instructor[instructor_name]["total_GPA"] += (int(semester[k]) * v)
 
-    all_semester = sorted(all_semester)
-    all_instructor = sorted(all_instructor)
+        all_semester = sorted(all_semester)
+        all_instructor = sorted(all_instructor)
 
-    # returned data
-    ret_dic = {"GPA_semester" : GPA_semester, "all_semester": all_semester, \
-                "GPA_instructor": GPA_instructor, "all_instructor": all_instructor}
-    return render(request, "course.html", ret_dic)
+        # query avg worload and rating
+        sql = "SELECT * FROM Course WHERE subject_number = \"{subject_number}\"".format(subject_number = subject_number)
+        cursor = connection.cursor()
+        cursor.execute(sql)
+        data = utility.dictfetchall(cursor)
+        average_workload = data[0]["average_workload"]
+        average_rating = data[0]["average_rating"]
+        # returned data
+        ret_dic = {"GPA_semester" : GPA_semester, "all_semester": all_semester, \
+                "GPA_instructor": GPA_instructor, "all_instructor": all_instructor, \
+                "average_workload": average_workload, "average_rating": average_rating}
+        return render(request, "course.html", ret_dic)
+    # post new worklaod and rating
+    elif(request.method == 'POST'):
+        is_success = ""
+        reason = ""
+        # anonymous user
+        if(not request.user.is_authenticated):
+            is_success = "fail"
+            reason = "unauthenticated user"
+        # authenticated user
+        else:
+            user_name = request.user.username
+            rating = int(request.Post.get("rating"))
+            workload = int(request.Post.get("workload"))
+            # does the current value already exist ?
+            sql = "SELECT * FROM UserInput WHERE user_name = \"{user_name}\" \
+                    AND subject_number_id = \"{subject_number}\"".format(\
+                    user_name = user_name, subject_number = subject_number)
+            cursor = connection.cursor()
+            cursor.execute(sql)
+            all_rows = utility.dictfetchall(cursor)
+            # query does not exist, insert the data
+            if(not all_rows):
+                # insert data into the data base
+                sql = "INSERT INTO UserInput (user_name, subject_number_id, workload, rating) \
+                        VALUES (\"{user_name}\", \"{subject_number}\", {workload}, {rating})".format(\
+                        user_name = user_name, subject_number = subject_number, \
+                        workload = workload, rating = rating)
+                cursor = connection.cursor()
+                cursor.execute(sql)
+            else:
+                sql = "UPDATE UserInput \
+                        SET workload = {workload}, rating = {rating} \
+                        WHERE user_name = {user_name}, subject_number_id = {subject_number}".format(\
+                        workload = workload, rating = rating, user_name = user_name, subject_number = subject_number)
+                cursor = connection.cursor()
+                cursor.execute(sql)
+            is_success = "success"
+            reason = ""
+        ret = {"is_success": is_success, "reason": reason}
+        return JsonResponse(dic)
 
 def ranking(request):
     # query default subject list and gened list
