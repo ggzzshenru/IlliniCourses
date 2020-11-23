@@ -7,7 +7,7 @@ urlpatterns = [
     # course page
     path("courses/<str:subject_number>", views.course, name = "course_page"),
     # ranking page
-    path("ranking", views.ranking, name = "ranking_page"),
-    # all other page go to 404
+    path("ranking/", views.ranking, name = "ranking_page"),
+
     # re_path(r".+", views.error, name = "error_page")
 ]

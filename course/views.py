@@ -80,10 +80,11 @@ def ranking(request):
     sql = "SELECT type FROM GeneralEducation"
     default_gened_list = [i.type for i in models.GeneralEducation.objects.raw(sql)]
     default_record_size = "20"
+
     # parse request data
     is_data_only = request.GET.get("isdataonly", "False")
     subject_list = request.GET.getlist("subject", default_subject_list)
-    gened_list = request.GET.getlist("gened", default_gened_list)
+    gened_list = request.GET.getlist("gened", [])
     avg_rating_lo = int(request.GET.get("avgratinglo", "-1"))
     avg_rating_hi = int(request.GET.get("avgratinghi", "10"))
     avg_workload_lo = int(request.GET.get("avgworkloadlo", "-1"))
@@ -95,19 +96,34 @@ def ranking(request):
     record_size = str((int(hi) - int(lo)) + 1)
 
     # do the query
-    sql = "SELECT * \
-    FROM Course JOIN GenedSatisfaction ON Course.subject_number = GenedSatisfaction.subject_number_id\
-    WHERE average_rating >= {avg_rating_lo} AND average_rating <= {avg_rating_hi} \
-    AND average_workload >= {avg_workload_lo} AND average_workload <= {avg_workload_hi} \
-    AND subject IN ({subject_list}) AND type_id IN ({gened_list}) \
-    ORDER BY average_rating {rating_order}, average_workload {workload_order} \
-    LIMIT {record_size} \
-    OFFSET {lo}" \
-    .format(avg_rating_lo = avg_rating_lo, avg_rating_hi = avg_rating_hi,\
-    avg_workload_lo = avg_workload_lo, avg_workload_hi = avg_workload_hi, \
-    subject_list = ','.join(["\"" + s + "\"" for s in subject_list]), \
-    gened_list = ','.join(["\"" + s + "\"" for s in gened_list]), \
-    rating_order = rating_order, workload_order = workload_order, record_size = record_size, lo = lo)
+    # recieved genned do the join
+    if(gened_list):
+        sql = "SELECT * \
+        FROM Course JOIN GenedSatisfaction ON Course.subject_number = GenedSatisfaction.subject_number_id\
+        WHERE average_rating >= {avg_rating_lo} AND average_rating <= {avg_rating_hi} \
+        AND average_workload >= {avg_workload_lo} AND average_workload <= {avg_workload_hi} \
+        AND subject IN ({subject_list}) AND type_id IN ({gened_list}) \
+        ORDER BY average_rating {rating_order}, average_workload {workload_order} \
+        LIMIT {record_size} \
+        OFFSET {lo}" \
+        .format(avg_rating_lo = avg_rating_lo, avg_rating_hi = avg_rating_hi,\
+        avg_workload_lo = avg_workload_lo, avg_workload_hi = avg_workload_hi, \
+        subject_list = ','.join(["\"" + s + "\"" for s in subject_list]), \
+        gened_list = ','.join(["\"" + s + "\"" for s in gened_list]), \
+        rating_order = rating_order, workload_order = workload_order, record_size = record_size, lo = lo)
+    else:
+        sql = "SELECT * \
+        FROM Course \
+        WHERE average_rating >= {avg_rating_lo} AND average_rating <= {avg_rating_hi} \
+        AND average_workload >= {avg_workload_lo} AND average_workload <= {avg_workload_hi} \
+        AND subject IN ({subject_list})\
+        ORDER BY average_rating {rating_order}, average_workload {workload_order} \
+        LIMIT {record_size} \
+        OFFSET {lo}" \
+        .format(avg_rating_lo = avg_rating_lo, avg_rating_hi = avg_rating_hi,\
+        avg_workload_lo = avg_workload_lo, avg_workload_hi = avg_workload_hi, \
+        subject_list = ','.join(["\"" + s + "\"" for s in subject_list]), \
+        rating_order = rating_order, workload_order = workload_order, record_size = record_size, lo = lo)
 
     # handle the result
     cursor = connection.cursor()
@@ -122,7 +138,6 @@ def ranking(request):
         dic["default_subject_list"] = default_subject_list
         dic["default_gened_list"] = default_gened_list
         return render(request, "ranking.html", dic);
-
 
 def error(request):
     return render(request, "error.html", {});

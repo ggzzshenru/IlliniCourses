@@ -19,6 +19,7 @@ from django.urls import include
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('accounts/', include('allauth.urls')),
     # set the root url
-    path("", include("course.urls")),
+    path("", include("course.urls"))
 ]

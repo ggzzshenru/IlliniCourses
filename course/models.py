@@ -84,3 +84,18 @@ class Grade(models.Model):
             models.CheckConstraint(check = ~models.Q(last_name = ""), name = "grade_last_name_not_null_constraint")
         ]
         db_table = "Grade"
+
+class UserInput(models.Model):
+    user_name = models.CharField(max_length = 512)
+    subject_number = models.ForeignKey(Course, on_delete = models.CASCADE)
+    workload = models.IntegerField(default = -1) # means user did not input
+    rating = models.IntegerField(default = -1) # means user did not input this kind of data
+    class Meta:
+        constraints = [
+        models.UniqueConstraint(fields = ["user_name", "subject_number"], name = "userinput_title_unique_constraint"),
+        models.CheckConstraint(check = models.Q(workload__gte = '-1'), name = "userinput_workload_gte_zero_constraint"),
+        models.CheckConstraint(check = models.Q(workload__lte = '5'), name = "userinput_workload_lte_give_constraint"),
+        models.CheckConstraint(check = models.Q(rating__gte = '-1'), name = "userinput_rating_gte_zero_constraint"),
+        models.CheckConstraint(check = models.Q(rating__lte = '5'), name = "userinput_rating_lte_five_constraint")
+        ]
+        db_table = "UserInput"
